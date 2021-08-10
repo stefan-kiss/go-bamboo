@@ -3,7 +3,7 @@
 # Go-Bamboo
 ## Go client library for communicating with an Atlassian Bamboo CI Server API.
 
-go-github requires Go version 1.7 or greater.
+go-github requires Go version 1.13 or greater.
 
 
 **Atlassian's Bamboo API documentation refers to endpoints as 'services'. This client library was modeled after go-github which also uses the term 'service' to describe an interface that implements all methods that interact with a certain endpoint group (the plan service implements plan related methods). As to not confuse the two, this documentation will refer to an API 'service' as a resource, i.e. go-bamboo exposes multiple services to communicate with the Bamboo API resources.**
