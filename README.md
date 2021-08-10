@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/stefan-kiss/go-bamboo.svg?branch=master)](https://travis-ci.org/stefan-kiss/go-bamboo) [![GoDoc](https://godoc.org/github.com/stefan-kiss/go-bamboo?status.svg)](https://godoc.org/github.com/stefan-kiss/go-bamboo)
+[![Build Status](https://travis-ci.com/stefan-kiss/go-bamboo.svg?branch=master)](https://travis-ci.com/stefan-kiss/go-bamboo) [![GoDoc](https://godoc.org/github.com/stefan-kiss/go-bamboo?status.svg)](https://godoc.org/github.com/stefan-kiss/go-bamboo)
 
 # Go-Bamboo
 ## Go client library for communicating with an Atlassian Bamboo CI Server API.
