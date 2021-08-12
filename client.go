@@ -52,6 +52,7 @@ type Client struct {
 	Clone       *CloneService
 	Server      *ServerService
 	Permissions *Permissions
+	Raw         *RawService
 }
 
 type service struct {
