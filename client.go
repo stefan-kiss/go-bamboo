@@ -102,6 +102,7 @@ func NewSimpleClient(httpClient *http.Client, username, password string) *Client
 	c.Clone = (*CloneService)(&c.common)
 	c.Server = (*ServerService)(&c.common)
 	c.Permissions = (*Permissions)(&c.common)
+	c.Raw = (*RawService)(&c.common)
 	return c
 }
 
