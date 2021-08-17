@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/rcarmstrong/go-bamboo"
+	"github.com/stefan-kiss/go-bamboo"
 )
 
 func TestProjectInfo(t *testing.T) {

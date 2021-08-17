@@ -20,7 +20,7 @@ go-github requires Go version 1.13 or greater.
 
 ## Usage ##
 ```go
-import bamboo "github.com/rcarmstrong/go-bamboo"
+import bamboo "github.com/stefan-kiss/go-bamboo"
 ```
 
 ### Authenticaiton ###

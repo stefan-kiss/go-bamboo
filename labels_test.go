@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	bamboo "github.com/rcarmstrong/go-bamboo"
+	bamboo "github.com/stefan-kiss/go-bamboo"
 )
 
 var (

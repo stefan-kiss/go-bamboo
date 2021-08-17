@@ -29,19 +29,34 @@ type Plans struct {
 
 // Plan is the definition of a single plan
 type Plan struct {
-	ShortName string   `json:"shortName,omitempty"`
-	ShortKey  string   `json:"shortKey,omitempty"`
-	Type      string   `json:"type,omitempty"`
-	Enabled   bool     `json:"enabled,omitempty"`
-	Link      *Link    `json:"link,omitempty"`
-	Key       string   `json:"key,omitempty"`
-	Name      string   `json:"name,omitempty"`
-	PlanKey   *PlanKey `json:"planKey,omitempty"`
+	ShortName       string          `json:"shortName,omitempty"`
+	ShortKey        string          `json:"shortKey,omitempty"`
+	Type            string          `json:"type,omitempty"`
+	Enabled         bool            `json:"enabled,omitempty"`
+	Link            *Link           `json:"link,omitempty"`
+	Key             string          `json:"key,omitempty"`
+	Name            string          `json:"name,omitempty"`
+	PlanKey         *PlanKey        `json:"planKey,omitempty"`
+	VariableContext VariableContext `json:"variableContext"`
 }
 
 // PlanKey holds the plan-key for a plan
 type PlanKey struct {
 	Key string `json:"key,omitempty"`
+}
+
+type VariableContext struct {
+	Size       int            `json:"size"`
+	MaxResults int            `json:"max-results"`
+	StartIndex int            `json:"start-index"`
+	Variable   []PlanVariable `json:"variable"`
+}
+
+type PlanVariable struct {
+	Key          string `json:"key"`
+	Value        string `json:"value"`
+	VariableType string `json:"variableType"`
+	IsPassword   bool   `json:"isPassword"`
 }
 
 // CreatePlanBranch will create a plan branch with the given branch name for the specified build
@@ -187,4 +202,25 @@ func (p *PlanService) DisablePlan(planKey string) (*http.Response, error) {
 		return response, err
 	}
 	return response, nil
+}
+
+// GetVars will return a plan's variables
+func (p *PlanService) GetVars(planKey string) ([]PlanVariable, *http.Response, error) {
+	planResp := Plan{}
+
+	u := fmt.Sprintf("plan/%s", planKey)
+	request, err := p.client.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	q := request.URL.Query()
+	q.Add("expand", "variableContext")
+	request.URL.RawQuery = q.Encode()
+
+	response, err := p.client.Do(request, &planResp)
+	if err != nil {
+		return nil, response, err
+	}
+	return planResp.VariableContext.Variable, response, nil
 }
