@@ -81,8 +81,23 @@ func TestProjectPlans2(t *testing.T) {
 }
 
 func projectPlansStub(w http.ResponseWriter, r *http.Request) {
-	resp := bamboo.PlanResponse{Plans: &bamboo.Plans{PlanList: []*bamboo.Plan{&bamboo.Plan{"test project", "TPRJ", "", true, nil,
-		"ABC-TPRJ", "test project", &bamboo.PlanKey{"ABC-TPRJ"}}}}}
+	resp := bamboo.PlanResponse{
+		Plans: &bamboo.Plans{
+			PlanList: []*bamboo.Plan{
+				{
+					"test project",
+					"TPRJ",
+					"",
+					true,
+					nil,
+					"ABC-TPRJ",
+					"test project",
+					&bamboo.PlanKey{"ABC-TPRJ"},
+					bamboo.VariableContext{},
+				},
+			},
+		},
+	}
 	bytes, err := json.Marshal(resp)
 	if err != nil {
 		panic(err)

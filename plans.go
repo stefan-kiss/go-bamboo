@@ -10,7 +10,7 @@ import (
 type PlanService service
 
 // PlanCreateBranchOptions specifies the optional parameters
-// for the CreatePlanBranch method
+// for the CreateBranch method
 type PlanCreateBranchOptions struct {
 	VCSBranch string
 }
@@ -29,15 +29,15 @@ type Plans struct {
 
 // Plan is the definition of a single plan
 type Plan struct {
-	ShortName       string          `json:"shortName,omitempty"`
-	ShortKey        string          `json:"shortKey,omitempty"`
-	Type            string          `json:"type,omitempty"`
-	Enabled         bool            `json:"enabled,omitempty"`
-	Link            *Link           `json:"link,omitempty"`
-	Key             string          `json:"key,omitempty"`
-	Name            string          `json:"name,omitempty"`
-	PlanKey         *PlanKey        `json:"planKey,omitempty"`
-	VariableContext VariableContext `json:"variableContext"`
+	ShortName       string           `json:"shortName,omitempty"`
+	ShortKey        string           `json:"shortKey,omitempty"`
+	Type            string           `json:"type,omitempty"`
+	Enabled         bool             `json:"enabled,omitempty"`
+	Link            *Link            `json:"link,omitempty"`
+	Key             string           `json:"key,omitempty"`
+	Name            string           `json:"name,omitempty"`
+	PlanKey         *PlanKey         `json:"planKey,omitempty"`
+	VariableContext *VariableContext `json:"variableContext"`
 }
 
 // PlanKey holds the plan-key for a plan
@@ -59,8 +59,8 @@ type PlanVariable struct {
 	IsPassword   bool   `json:"isPassword"`
 }
 
-// CreatePlanBranch will create a plan branch with the given branch name for the specified build
-func (p *PlanService) CreatePlanBranch(planKey, branchName string, options *PlanCreateBranchOptions) (bool, *http.Response, error) {
+// CreateBranch will create a plan branch with the given branch name for the specified build
+func (p *PlanService) CreateBranch(planKey, branchName string, options *PlanCreateBranchOptions) (bool, *http.Response, error) {
 	var u string
 	if !emptyStrings(planKey, branchName) {
 		u = fmt.Sprintf("plan/%s/branch/%s.json", planKey, branchName)
@@ -222,5 +222,12 @@ func (p *PlanService) GetVars(planKey string) ([]PlanVariable, *http.Response, e
 	if err != nil {
 		return nil, response, err
 	}
+
+	if planResp.VariableContext.MaxResults != planResp.VariableContext.Size {
+		return planResp.VariableContext.Variable, response, fmt.Errorf("not all results were returned: %d out of %d",
+			planResp.VariableContext.Size,
+			planResp.VariableContext.MaxResults)
+	}
+
 	return planResp.VariableContext.Variable, response, nil
 }
