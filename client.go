@@ -11,7 +11,7 @@
 //  // Defaults to "http://localhost:8085/rest/api/latest/"
 //  client.SetURL("https://my.bambooserver.com:8085/")
 //
-//  planNames, _, err := client.Plans.ListPlanNames()
+//  planNames, _, err := client.Plans.ListNames()
 
 package bamboo
 
@@ -35,7 +35,8 @@ const (
 // Client manages the communication with the Bamboo API
 type Client struct {
 	client      *http.Client // HTTP client used to communicate with the API
-	BaseURL     *url.URL
+	ApiUrl      *url.URL
+	BaseUrl     *url.URL
 	SimpleCreds *SimpleCredentials // User credentials
 
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
@@ -70,11 +71,12 @@ func (c *Client) SetURL(desiredURL string) error {
 	if newURL.Scheme == "" {
 		return newErrBadURL("URL scheme was blank")
 	}
-
+	baseUrl := *newURL
+	c.BaseUrl = &baseUrl
 	if !strings.HasSuffix(newURL.Path, "/rest/api/latest/") {
 		newURL.Path += "/rest/api/latest/"
 	}
-	c.BaseURL = newURL
+	c.ApiUrl = newURL
 	return nil
 }
 
@@ -89,7 +91,7 @@ func NewSimpleClient(httpClient *http.Client, username, password string) *Client
 	}
 	baseURL, _ := url.Parse(defaultBaseURL)
 
-	c := &Client{client: httpClient, BaseURL: baseURL, SimpleCreds: &SimpleCredentials{Username: username, Password: password}}
+	c := &Client{client: httpClient, ApiUrl: baseURL, SimpleCreds: &SimpleCredentials{Username: username, Password: password}}
 	c.common.client = c
 	c.Plans = (*PlanService)(&c.common)
 	c.Deploys = (*DeployService)(&c.common)
@@ -107,15 +109,15 @@ func NewSimpleClient(httpClient *http.Client, username, password string) *Client
 }
 
 // NewRequest creates an API request. A relative URL can be provided in urlStr,
-// in which case it is resolved relative to the BaseURL of the Client.
+// in which case it is resolved relative to the ApiUrl of the Client.
 // Relative URLs should always be specified without a preceding slash. If
 // specified, the value pointed to by body is JSON encoded and included as the
 // request body.
 func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Request, error) {
-	if !strings.HasSuffix(c.BaseURL.Path, "/") {
-		return nil, fmt.Errorf("BaseURL must have a trailing slash, but %q does not", c.BaseURL)
+	if !strings.HasSuffix(c.ApiUrl.Path, "/") {
+		return nil, fmt.Errorf("ApiUrl must have a trailing slash, but %q does not", c.ApiUrl)
 	}
-	u, err := c.BaseURL.Parse(urlStr)
+	u, err := c.ApiUrl.Parse(urlStr)
 	if err != nil {
 		return nil, err
 	}
@@ -147,17 +149,17 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 }
 
 // RawRequest creates an API request. A relative URL can be provided in urlStr,
-// in which case it is resolved relative to the BaseURL of the Client.
+// in which case it is resolved relative to the ApiUrl of the Client.
 // Relative URLs should always be specified without a preceding slash. If
 // specified, the value pointed to by body is JSON encoded and included as the
 // request body.
 func (c *Client) RawRequest(method, urlStr string, body interface{}) (*http.Request, error) {
-	if !strings.HasSuffix(c.BaseURL.Path, "/") {
-		return nil, fmt.Errorf("BaseURL must have a trailing slash, but %q does not", c.BaseURL)
+	if !strings.HasSuffix(c.ApiUrl.Path, "/") {
+		return nil, fmt.Errorf("ApiUrl must have a trailing slash, but %q does not", c.ApiUrl)
 	}
 
 	var rawUrl url.URL
-	rawUrl = *c.BaseURL
+	rawUrl = *c.ApiUrl
 	rawUrl.Path = ""
 
 	u, err := rawUrl.Parse(urlStr)

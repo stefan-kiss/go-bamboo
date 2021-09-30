@@ -3,6 +3,13 @@ package bamboo
 import (
 	"fmt"
 	"net/http"
+	"strings"
+)
+
+const (
+	PlanExpandResults   = "stages.stage.results.result"
+	PlanExpandVariables = "variables"
+	PlanExpandArtifacts = "artifacts"
 )
 
 // ResultService handles communication with build results
@@ -17,36 +24,76 @@ type ResultsResponse struct {
 
 // Results is the collection of results
 type Results struct {
-	*CollectionMetadata
-	ResultList []*Result `json:"result"`
+	CollectionMetadata `json:",inline"`
+	Result             []Result `json:"result"`
+}
+
+type Stage struct {
+	Expand             string  `json:"expand"`
+	Name               string  `json:"name"`
+	Description        string  `json:"description"`
+	Id                 int     `json:"id"`
+	LifeCycleState     string  `json:"lifeCycleState"`
+	State              string  `json:"state"`
+	DisplayClass       string  `json:"displayClass"`
+	DisplayMessage     string  `json:"displayMessage"`
+	CollapsedByDefault bool    `json:"collapsedByDefault"`
+	Manual             bool    `json:"manual"`
+	Restartable        bool    `json:"restartable"`
+	Runnable           bool    `json:"runnable"`
+	Results            Results `json:"results"`
+}
+
+type Stages struct {
+	CollectionMetadata `json:",inline"`
+	Stage              []Stage `json:"stage"`
+}
+
+type Artifact struct {
+	Name                  string `json:"name"`
+	Link                  Link   `json:"link"`
+	ProducerJobKey        string `json:"producerJobKey"`
+	Shared                bool   `json:"shared"`
+	Size                  int    `json:"size"`
+	PrettySizeDescription string `json:"prettySizeDescription"`
+}
+
+type Artifacts struct {
+	CollectionMetadata `json:",inline"`
+	Artifact           []Artifact `json:"artifact"`
 }
 
 // Result represents all the information associated with a build result
 type Result struct {
 	ChangeSet              `json:"changes"`
-	ID                     int    `json:"id"`
-	PlanName               string `json:"planName"`
-	ProjectName            string `json:"projectName"`
-	BuildResultKey         string `json:"buildResultKey"`
-	LifeCycleState         string `json:"lifeCycleState"`
-	BuildStartedTime       string `json:"buildStartedTime"`
-	BuildCompletedTime     string `json:"buildCompletedTime"`
-	BuildDurationInSeconds int    `json:"buildDurationInSeconds"`
-	VcsRevisionKey         string `json:"vcsRevisionKey"`
-	BuildTestSummary       string `json:"buildTestSummary"`
-	SuccessfulTestCount    int    `json:"successfulTestCount"`
-	FailedTestCount        int    `json:"failedTestCount"`
-	QuarantinedTestCount   int    `json:"quarantinedTestCount"`
-	SkippedTestCount       int    `json:"skippedTestCount"`
-	Finished               bool   `json:"finished"`
-	Successful             bool   `json:"successful"`
-	BuildReason            string `json:"buildReason"`
-	ReasonSummary          string `json:"reasonSummary"`
-	Key                    string `json:"key"`
-	State                  string `json:"state"`
-	BuildState             string `json:"buildState"`
-	Number                 int    `json:"number"`
-	BuildNumber            int    `json:"buildNumber"`
+	ID                     int       `json:"id"`
+	PlanName               string    `json:"planName"`
+	ProjectName            string    `json:"projectName"`
+	BuildResultKey         string    `json:"buildResultKey"`
+	LifeCycleState         string    `json:"lifeCycleState"`
+	BuildStartedTime       string    `json:"buildStartedTime"`
+	BuildCompletedTime     string    `json:"buildCompletedTime"`
+	BuildDurationInSeconds int       `json:"buildDurationInSeconds"`
+	VcsRevisionKey         string    `json:"vcsRevisionKey"`
+	BuildTestSummary       string    `json:"buildTestSummary"`
+	SuccessfulTestCount    int       `json:"successfulTestCount"`
+	FailedTestCount        int       `json:"failedTestCount"`
+	QuarantinedTestCount   int       `json:"quarantinedTestCount"`
+	SkippedTestCount       int       `json:"skippedTestCount"`
+	Finished               bool      `json:"finished"`
+	Successful             bool      `json:"successful"`
+	BuildReason            string    `json:"buildReason"`
+	ReasonSummary          string    `json:"reasonSummary"`
+	Key                    string    `json:"key"`
+	State                  string    `json:"state"`
+	BuildState             string    `json:"buildState"`
+	Number                 int       `json:"number"`
+	BuildNumber            int       `json:"buildNumber"`
+	Stages                 Stages    `json:"stages"`
+	LogFiles               []string  `json:"logFiles"`
+	Artifacts              Artifacts `json:"artifacts"`
+	Master                 Plan      `json:"master"`
+	Plan                   Plan      `json:"plan"`
 }
 
 // ChangeSet represents a collection of type Change
@@ -86,8 +133,8 @@ func (r *ResultService) NumberedResult(key string) (*Result, *http.Response, err
 	return &result, response, err
 }
 
-// NumberedResult returns the result information for the given plan key which includes the build number of the desired result
-func (r *ResultService) ListResults(key string) ([]*Result, *http.Response, error) {
+// ListResults lists the results for a plan
+func (r *ResultService) ListResults(key string) ([]Result, *http.Response, error) {
 	request, err := r.client.NewRequest(http.MethodGet, listResultsURL(key), nil)
 	if err != nil {
 		return nil, nil, err
@@ -103,5 +150,61 @@ func (r *ResultService) ListResults(key string) ([]*Result, *http.Response, erro
 		return nil, response, &simpleError{fmt.Sprintf("API returned unexpected status code %d", response.StatusCode)}
 	}
 
-	return result.Results.ResultList, response, err
+	return result.Results.Result, response, err
+}
+
+func (r *ResultService) GetExpanded(key string, expand []string) (*Result, *http.Response, error) {
+
+	pathStr := fmt.Sprintf("result/%s", key)
+	request, err := r.client.NewRequest(http.MethodGet, pathStr, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	expandQ := strings.Join(expand, ",")
+	q := request.URL.Query()
+	q.Set("expand", expandQ)
+	q.Set("includeAllStates", "true")
+	request.URL.RawQuery = q.Encode()
+
+	result := Result{}
+	response, err := r.client.Do(request, &result)
+	if err != nil {
+		return nil, response, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, response, &simpleError{fmt.Sprintf("API returned unexpected status code %d", response.StatusCode)}
+	}
+
+	return &result, response, err
+
+}
+
+func (r *ResultService) GetLatestExpanded(key string, expand []string) (*Result, *http.Response, error) {
+
+	pathStr := fmt.Sprintf("result/%s-latest", key)
+	request, err := r.client.NewRequest(http.MethodGet, pathStr, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	expandQ := strings.Join(expand, ",")
+	q := request.URL.Query()
+	q.Set("expand", expandQ)
+	q.Set("includeAllStates", "true")
+	request.URL.RawQuery = q.Encode()
+
+	result := Result{}
+	response, err := r.client.Do(request, &result)
+	if err != nil {
+		return nil, response, err
+	}
+
+	if response.StatusCode != 200 {
+		return nil, response, &simpleError{fmt.Sprintf("API returned unexpected status code %d", response.StatusCode)}
+	}
+
+	return &result, response, err
+
 }

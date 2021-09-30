@@ -16,7 +16,7 @@ func TestListPlans(t *testing.T) {
 	client := bamboo.NewSimpleClient(nil, "", "")
 	client.SetURL(ts.URL)
 
-	_, response, err := client.Plans.ListPlanKeys()
+	_, response, err := client.Plans.ListKeys()
 	assert.Error(t, err)
 	assert.NotNil(t, response)
 	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
@@ -29,7 +29,7 @@ func TestListPlanNames(t *testing.T) {
 	client := bamboo.NewSimpleClient(nil, "", "")
 	client.SetURL(ts.URL)
 
-	_, response, err := client.Plans.ListPlanNames()
+	_, response, err := client.Plans.ListNames()
 	assert.Error(t, err)
 	assert.NotNil(t, response)
 	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)

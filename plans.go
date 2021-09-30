@@ -46,11 +46,13 @@ type PlanKey struct {
 }
 
 type VariableContext struct {
-	Size       int            `json:"size"`
-	MaxResults int            `json:"max-results"`
-	StartIndex int            `json:"start-index"`
-	Variable   []PlanVariable `json:"variable"`
+	Size       int          `json:"size"`
+	MaxResults int          `json:"max-results"`
+	StartIndex int          `json:"start-index"`
+	Variable   VariableList `json:"variable"`
 }
+
+type VariableList []PlanVariable
 
 type PlanVariable struct {
 	Key          string `json:"key"`
@@ -91,8 +93,8 @@ func (p *PlanService) CreateBranch(planKey, branchName string, options *PlanCrea
 	return true, response, nil
 }
 
-// NumberOfPlans returns the number of plans on the Bamboo server
-func (p *PlanService) NumberOfPlans() (int, *http.Response, error) {
+// GetNumber returns the number of plans on the Bamboo server
+func (p *PlanService) GetNumber() (int, *http.Response, error) {
 	request, err := p.client.NewRequest(http.MethodGet, "plan.json", nil)
 	if err != nil {
 		return 0, nil, err
@@ -116,10 +118,10 @@ func (p *PlanService) NumberOfPlans() (int, *http.Response, error) {
 	return planResp.Plans.Size, response, nil
 }
 
-// ListPlans gets information on all plans
-func (p *PlanService) ListPlans() ([]*Plan, *http.Response, error) {
+// List gets information on all plans
+func (p *PlanService) List() ([]*Plan, *http.Response, error) {
 	// Get number of plans to set max-results
-	numPlans, resp, err := p.NumberOfPlans()
+	numPlans, resp, err := p.GetNumber()
 	if err != nil {
 		return nil, resp, err
 	}
@@ -146,9 +148,9 @@ func (p *PlanService) ListPlans() ([]*Plan, *http.Response, error) {
 	return planResp.Plans.PlanList, response, nil
 }
 
-// ListPlanKeys get all the plan keys for all build plans on Bamboo
-func (p *PlanService) ListPlanKeys() ([]string, *http.Response, error) {
-	plans, response, err := p.ListPlans()
+// ListKeys get all the plan keys for all build plans on Bamboo
+func (p *PlanService) ListKeys() ([]string, *http.Response, error) {
+	plans, response, err := p.List()
 	if err != nil {
 		return nil, response, err
 	}
@@ -160,9 +162,9 @@ func (p *PlanService) ListPlanKeys() ([]string, *http.Response, error) {
 	return keys, response, nil
 }
 
-// ListPlanNames returns a list of ShortNames of all plans
-func (p *PlanService) ListPlanNames() ([]string, *http.Response, error) {
-	plans, response, err := p.ListPlans()
+// ListNames returns a list of ShortNames of all plans
+func (p *PlanService) ListNames() ([]string, *http.Response, error) {
+	plans, response, err := p.List()
 	if err != nil {
 		return nil, response, err
 	}
@@ -174,9 +176,9 @@ func (p *PlanService) ListPlanNames() ([]string, *http.Response, error) {
 	return names, response, nil
 }
 
-// PlanNameMap returns a map[string]string where the PlanKey is the key and the ShortName is the value
-func (p *PlanService) PlanNameMap() (map[string]string, *http.Response, error) {
-	plans, response, err := p.ListPlans()
+// NamesMap returns a map[string]string where the PlanKey is the key and the ShortName is the value
+func (p *PlanService) NamesMap() (map[string]string, *http.Response, error) {
+	plans, response, err := p.List()
 	if err != nil {
 		return nil, response, err
 	}
@@ -189,8 +191,8 @@ func (p *PlanService) PlanNameMap() (map[string]string, *http.Response, error) {
 	return planMap, response, nil
 }
 
-// DisablePlan will disable a plan or plan branch
-func (p *PlanService) DisablePlan(planKey string) (*http.Response, error) {
+// Disable will disable a plan or plan branch
+func (p *PlanService) Disable(planKey string) (*http.Response, error) {
 	u := fmt.Sprintf("plan/%s/enable", planKey)
 	request, err := p.client.NewRequest(http.MethodDelete, u, nil)
 	if err != nil {
@@ -205,7 +207,7 @@ func (p *PlanService) DisablePlan(planKey string) (*http.Response, error) {
 }
 
 // GetVars will return a plan's variables
-func (p *PlanService) GetVars(planKey string) ([]PlanVariable, *http.Response, error) {
+func (p *PlanService) GetVars(planKey string) (VariableList, *http.Response, error) {
 	planResp := Plan{}
 
 	u := fmt.Sprintf("plan/%s", planKey)
@@ -230,4 +232,32 @@ func (p *PlanService) GetVars(planKey string) ([]PlanVariable, *http.Response, e
 	}
 
 	return planResp.VariableContext.Variable, response, nil
+}
+
+// GetVarValueE returns the variable value or error if it's not found
+func (vl VariableList) GetVarValueE(name string) (string, error) {
+	for _, v := range vl {
+		if v.Key == name {
+			return v.Value, nil
+		}
+	}
+	return "", fmt.Errorf("not found")
+}
+
+// GetVarValue returns the variable value or empty string if it's not found
+func (vl VariableList) GetVarValue(name string) string {
+	for _, v := range vl {
+		if v.Key == name {
+			return ""
+		}
+	}
+	return ""
+}
+
+func (vl VariableList) ToMap() map[string]string {
+	retMap := make(map[string]string, 0)
+	for _, v := range vl {
+		retMap[v.Key] = v.Value
+	}
+	return retMap
 }
