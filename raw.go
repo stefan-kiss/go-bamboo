@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // RawService handles communication with the raw request service
@@ -16,6 +17,8 @@ type RawResponse struct {
 
 // GetRaw will send a get request
 func (p *RawService) GetRaw(path string) (string, *http.Response, error) {
+
+	path = strings.TrimPrefix(path, p.client.BaseUrl.String())
 
 	request, err := p.client.RawRequest(http.MethodGet, path, nil)
 	if err != nil {

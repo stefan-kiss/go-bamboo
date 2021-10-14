@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	PlanExpandResults   = "stages.stage.results.result"
-	PlanExpandVariables = "variables"
-	PlanExpandArtifacts = "artifacts"
+	PlanExpandResults           = "stages.stage.results.result"
+	PlanExpandVariables         = "variables"
+	PlanExpandArtifacts         = "artifacts"
+	PlanExpandFailedTestResults = "stages.stage.results.result.testResults.failedTests.testResult.errors"
 )
 
 // ResultService handles communication with build results
@@ -63,37 +64,80 @@ type Artifacts struct {
 	Artifact           []Artifact `json:"artifact"`
 }
 
+type ErrorMessage struct {
+	Message string `json:"message"`
+}
+
+type TestError struct {
+	CollectionMetadata `json:",inline"`
+	Error              []ErrorMessage `json:"error"`
+}
+type TestDetail struct {
+	TestCaseId        int       `json:"testCaseId"`
+	ClassName         string    `json:"className"`
+	MethodName        string    `json:"methodName"`
+	Status            string    `json:"status"`
+	Duration          int       `json:"duration"`
+	DurationInSeconds int       `json:"durationInSeconds"`
+	Errors            TestError `json:"errors"`
+}
+type TestResult struct {
+	CollectionMetadata `json:",inline"`
+	TestResult         []TestDetail `json:"testResult"`
+}
+
+type TestResults struct {
+	Expand              string     `json:"expand"`
+	All                 int        `json:"all"`
+	Successful          int        `json:"successful"`
+	Failed              int        `json:"failed"`
+	NewFailed           int        `json:"newFailed"`
+	ExistingFailed      int        `json:"existingFailed"`
+	Fixed               int        `json:"fixed"`
+	Quarantined         int        `json:"quarantined"`
+	Skipped             int        `json:"skipped"`
+	AllTests            TestResult `json:"allTests"`
+	SuccessfulTests     TestResult `json:"successfulTests"`
+	FailedTests         TestResult `json:"failedTests"`
+	NewFailedTests      TestResult `json:"newFailedTests"`
+	ExistingFailedTests TestResult `json:"existingFailedTests"`
+	FixedTests          TestResult `json:"fixedTests"`
+	QuarantinedTests    TestResult `json:"quarantinedTests"`
+	SkippedTests        TestResult `json:"skippedTests"`
+}
+
 // Result represents all the information associated with a build result
 type Result struct {
 	ChangeSet              `json:"changes"`
-	ID                     int       `json:"id"`
-	PlanName               string    `json:"planName"`
-	ProjectName            string    `json:"projectName"`
-	BuildResultKey         string    `json:"buildResultKey"`
-	LifeCycleState         string    `json:"lifeCycleState"`
-	BuildStartedTime       string    `json:"buildStartedTime"`
-	BuildCompletedTime     string    `json:"buildCompletedTime"`
-	BuildDurationInSeconds int       `json:"buildDurationInSeconds"`
-	VcsRevisionKey         string    `json:"vcsRevisionKey"`
-	BuildTestSummary       string    `json:"buildTestSummary"`
-	SuccessfulTestCount    int       `json:"successfulTestCount"`
-	FailedTestCount        int       `json:"failedTestCount"`
-	QuarantinedTestCount   int       `json:"quarantinedTestCount"`
-	SkippedTestCount       int       `json:"skippedTestCount"`
-	Finished               bool      `json:"finished"`
-	Successful             bool      `json:"successful"`
-	BuildReason            string    `json:"buildReason"`
-	ReasonSummary          string    `json:"reasonSummary"`
-	Key                    string    `json:"key"`
-	State                  string    `json:"state"`
-	BuildState             string    `json:"buildState"`
-	Number                 int       `json:"number"`
-	BuildNumber            int       `json:"buildNumber"`
-	Stages                 Stages    `json:"stages"`
-	LogFiles               []string  `json:"logFiles"`
-	Artifacts              Artifacts `json:"artifacts"`
-	Master                 Plan      `json:"master"`
-	Plan                   Plan      `json:"plan"`
+	ID                     int         `json:"id"`
+	PlanName               string      `json:"planName"`
+	ProjectName            string      `json:"projectName"`
+	BuildResultKey         string      `json:"buildResultKey"`
+	LifeCycleState         string      `json:"lifeCycleState"`
+	BuildStartedTime       string      `json:"buildStartedTime"`
+	BuildCompletedTime     string      `json:"buildCompletedTime"`
+	BuildDurationInSeconds int         `json:"buildDurationInSeconds"`
+	VcsRevisionKey         string      `json:"vcsRevisionKey"`
+	BuildTestSummary       string      `json:"buildTestSummary"`
+	SuccessfulTestCount    int         `json:"successfulTestCount"`
+	FailedTestCount        int         `json:"failedTestCount"`
+	QuarantinedTestCount   int         `json:"quarantinedTestCount"`
+	SkippedTestCount       int         `json:"skippedTestCount"`
+	Finished               bool        `json:"finished"`
+	Successful             bool        `json:"successful"`
+	BuildReason            string      `json:"buildReason"`
+	ReasonSummary          string      `json:"reasonSummary"`
+	Key                    string      `json:"key"`
+	State                  string      `json:"state"`
+	BuildState             string      `json:"buildState"`
+	Number                 int         `json:"number"`
+	BuildNumber            int         `json:"buildNumber"`
+	Stages                 Stages      `json:"stages"`
+	LogFiles               []string    `json:"logFiles"`
+	Artifacts              Artifacts   `json:"artifacts"`
+	Master                 Plan        `json:"master"`
+	Plan                   Plan        `json:"plan"`
+	TestResults            TestResults `json:"testResults"`
 }
 
 // ChangeSet represents a collection of type Change
